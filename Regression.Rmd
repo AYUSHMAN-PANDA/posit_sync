@@ -1,0 +1,128 @@
+---
+title: "Assignment"
+author: "Shlok Pandey"
+date: "19/4/2023"
+output:
+  pdf_document:
+    toc: yes
+  html_document:
+    toc: yes    
+    toc_float: yes
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning=FALSE, message=FALSE)
+```
+
+# Part 1
+
+```{r}
+housing <- read.csv("/home/b30wulffz/Downloads/housing.csv")
+```
+
+```{r}
+corr_matrix <- cor(housing[,1:9])
+
+library(ggplot2)
+ggplot(data = reshape2::melt(corr_matrix)) +
+  geom_tile(aes(x = Var1, y = Var2, fill = value)) +
+  scale_fill_gradient2(low = "blue", mid = "white", high = "red", midpoint = 0) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  labs(title = "Correlation Matrix of Housing Variables")
+
+```
+
+```{r}
+lm1 <- lm(median_house_value ~ median_income + total_rooms + housing_median_age, data = housing)
+lm2 <- lm(median_house_value ~ median_income + housing_median_age, data = housing)
+
+new_data <- data.frame(median_income = 8.3252, total_rooms = 880.0, housing_median_age = 41.0)
+predict(lm1, newdata = new_data)
+
+new_data <- data.frame(median_income = 8.3252, housing_median_age = 41.0)
+predict(lm2, newdata = new_data)
+
+```
+
+```{r}
+library(car)
+vif(lm(median_house_value ~ ., data = housing))
+```
+
+```{r}
+lm_model <- lm(median_house_value ~ longitude + latitude + housing_median_age + total_rooms + total_bedrooms + population + households + median_income + ocean_proximity, data = housing)
+
+plot(lm_model$fitted.values, lm_model$residuals, xlab = "Fitted Values", ylab = "Residuals", main = "Residuals vs. Fitted Values Plot")
+
+```
+
+```{r}
+lm_model <- lm(median_house_value ~ longitude + latitude + housing_median_age + total_rooms + total_bedrooms + population + households + median_income + ocean_proximity, data = housing)
+
+ncvTest(lm_model)
+
+```
+Since p < 0.05, we reject the null hypothesis and conclude that there is evidence of heteroscedasticity in the model.
+
+```{r}
+lm_model <- lm(median_house_value ~ longitude + latitude + housing_median_age + total_rooms + total_bedrooms + population + households + median_income + ocean_proximity, data = housing)
+
+qqnorm(lm_model$residuals, main = "Normal Q-Q Plot of Residuals")
+qqline(lm_model$residuals)
+```
+
+```{r}
+AIC1 <- AIC(lm1)
+AIC2 <- AIC(lm2)
+if (AIC1 < AIC2) {
+  cat("Model 1 is better with AIC =", AIC1, "\n")
+} else if (AIC2 < AIC1) {
+  cat("Model 2 is better with AIC =", AIC2, "\n")
+} else {
+  cat("Both models have the same AIC =", AIC1, "\n")
+}
+```
+
+```{r}
+summary(lm1)
+confint(lm1)
+```
+The coefficient for median_income is positive, which means that as median income increases, so does the median house value. This coefficient is highly significant (p < 0.001), which suggests that it is an important predictor of median house value.
+
+The coefficient for total_rooms is also positive and significant, indicating that as the number of total rooms in a house increases, so does the median house value.
+
+The coefficient for housing_median_age is also positive and significant, suggesting that as the age of the houses in the area increases, so does the median house value.
+
+# Part 2
+```{r}
+binary <- read.csv("/home/b30wulffz/Downloads/binary.csv")
+```
+
+```{r}
+model <- glm(admit ~ gre + gpa + rank, data = binary, family = "binomial")
+
+new_student <- data.frame(gre = 700, gpa = 3.5, rank = 2)
+prob_admit <- predict(model, newdata = new_student, type = "response")
+
+cat("The predicted probability of admission for a student with GRE score 700, GPA 3.5, and rank 2 is", prob_admit, "\n")
+
+summary(model)
+confint(model)
+```
+
+The logistic regression model shows that GRE, GPA, and rank are significant predictors of admission. The intercept term has a negative coefficient, indicating that applicants with lower GRE scores, GPAs, and lower ranked institutions are less likely to be admitted. The coefficient for GRE and GPA are positive, indicating that an increase in GRE score or GPA is associated with an increase in the log-odds of being admitted. The coefficient for rank is negative, indicating that higher ranked institutions are associated with a decrease in the log-odds of being admitted.
+
+To interpret the coefficients in terms of odds, we can exponentiate them. For example, the odds ratio for GRE is exp(0.002294) = 1.002298, meaning that for a one-unit increase in GRE score, the odds of being admitted increase by approximately 0.23%. Similarly, the odds ratio for GPA is exp(0.777014) = 2.174418, meaning that for a one-unit increase in GPA, the odds of being admitted increase by approximately 117%. The odds ratio for rank is exp(-0.560031) = 0.571281, meaning that for a one-unit increase in rank, the odds of being admitted decrease by approximately 43%. Therefore, the most significant predictors of admission are GPA and GRE, while rank is the least significant predictor.
+
+```{r}
+model2 <- glm(admit ~ gre + gpa + rank + gpa*rank, data = binary, family = "binomial")
+summary(model2)
+```
+
+The output shows that the interaction effect between GPA and rank is not significant (p-value = 0.7433). This means that there is no evidence to support the idea that the effect of GPA on admission depends on the rank of the undergraduate institution.
+
+The other coefficients indicate that gre and gpa are significant predictors of admission (p-values of 0.0354 and 0.2283, respectively). The coefficient of gre suggests that an increase in one unit of gre score increases the log odds of admission by 0.002. Similarly, the coefficient of gpa suggests that an increase in one unit of gpa increases the log odds of admission by 1.037. The coefficient of rank is not significant (p-value = 0.8894), suggesting that there is no evidence to suggest that the rank of the undergraduate institution has a significant effect on admission.
+
+In summary, there is no evidence to support an interaction effect between GPA and rank, and the most significant predictors of admission are gre and gpa.
